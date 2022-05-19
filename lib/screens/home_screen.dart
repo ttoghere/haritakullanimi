@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_google_places/flutter_google_places.dart';
 import 'package:geolocator/geolocator.dart';
@@ -134,6 +136,16 @@ class _HomePageState extends State<HomePage> {
     tahminGosterimi(p: p!, scaffoldState: homeScaffold.currentState!);
   }
 
+  Completer<GoogleMapController> _completer = Completer();
+  Future<void> _goToPlace(Place place) async {
+    final GoogleMapController controller = await _completer.future;
+    controller.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(target: LatLng(35.0, 37.0), zoom: 14),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     var appBloc = Provider.of<AppBloc>(context);
@@ -157,34 +169,44 @@ class _HomePageState extends State<HomePage> {
                     zoom: 14,
                   ),
                   markers: markersList,
-                  mapType: MapType.normal,
+                  mapType: MapType.satellite,
                   onMapCreated: (GoogleMapController controller) {
                     googleMapController = controller;
                   },
                 ),
-                if (appBloc.searchResults != null &&
+                if (appBloc.searchResults != "" &&
                     appBloc.searchResults.length != 0)
                   Container(
-                    height: MediaQuery.of(context).size.height,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.6),
+                    margin: EdgeInsets.only(top: 70),
+                    child: Stack(
+                      children: [
+                        Container(
+                          height: 400,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.6),
+                          ),
+                        ),
+                        Container(
+                          height: MediaQuery.of(context).size.height,
+                          child: Container(
+                            height: 300,
+                            child: ListView.builder(
+                              itemCount: appBloc.searchResults.length,
+                              itemBuilder: (context, index) {
+                                return ListTile(
+                                  title: Text(
+                                    appBloc.searchResults[index].description,
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                Container(
-                  height: MediaQuery.of(context).size.height,
-                  child: ListView.builder(
-                    itemCount: appBloc.searchResults.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        title: Text(
-                          appBloc.searchResults[index].description,
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      );
-                    },
-                  ),
-                ),
                 Align(
                   alignment: Alignment.bottomRight,
                   child: Row(
