@@ -1,5 +1,4 @@
 // ignore_for_file: deprecated_member_use
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_api_headers/google_api_headers.dart';
@@ -7,15 +6,24 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_google_places/flutter_google_places.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_webservice/places.dart';
+import 'package:haritakullanimi/providers/app_bloc.dart';
+import 'package:provider/provider.dart';
 
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Material App',
-      home: HomePage(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(
+          value: AppBloc(),
+        ),
+      ],
+      child: MaterialApp(
+        title: 'Material App',
+        home: HomePage(),
+      ),
     );
   }
 }
@@ -30,7 +38,7 @@ class HomePage extends StatefulWidget {
 }
 
 //Google Servisten alınan geçici api anahtarı
-const gApiKey = "AIzaSyASN-XHVoXc78gyYQVnWCwS8Vh4aLB2-vQ";
+const gApiKey = "AIzaSyBJRG0aRlS63ym486056cszf4lgLSFY3ck";
 
 class _HomePageState extends State<HomePage> {
   //Arama alanı geçişi için scaffold anahtarı
@@ -149,40 +157,64 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    var appBloc = Provider.of<AppBloc>(context);
     return Scaffold(
       key: homeScaffold,
       appBar: AppBar(
         title: Text('Maps Kullanımı'),
       ),
-      body: Stack(
-        children: [
-          GoogleMap(
-            initialCameraPosition: baslangic,
-            markers: markersList,
-            mapType: MapType.normal,
-            onMapCreated: (GoogleMapController controller) {
-              googleMapController = controller;
-            },
-          ),
-          Align(
-            alignment: Alignment.bottomRight,
-            child: Row(
+      body: (appBloc.currentLocation == null)
+          ? Center(
+              child: Text("Location Error, Please Try again later"),
+            )
+          : Stack(
               children: [
-                ElevatedButton(
-                  onPressed: () {
-                    _aramaAlani();
+                GoogleMap(
+                  initialCameraPosition: CameraPosition(
+                    target: LatLng(
+                      appBloc.currentLocation!.latitude,
+                      appBloc.currentLocation!.longitude,
+                    ),
+                    zoom: 14,
+                  ),
+                  markers: markersList,
+                  mapType: MapType.normal,
+                  onMapCreated: (GoogleMapController controller) {
+                    googleMapController = controller;
                   },
-                  child: Text("Konum Ara"),
                 ),
-                SizedBox(
-                  width: 20,
+                Align(
+                  alignment: Alignment.bottomRight,
+                  child: Row(
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          _aramaAlani();
+                        },
+                        child: Text("Konum Ara"),
+                      ),
+                      SizedBox(
+                        width: 20,
+                      ),
+                    ],
+                  ),
                 ),
-               
+                Align(
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.brown, width: 1),
+                        ),
+                        hintText: "Konum Arayınız",
+                      ),
+                    ),
+                  ),
+                  alignment: Alignment.topLeft,
+                ),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }
