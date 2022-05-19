@@ -115,36 +115,6 @@ class _HomePageState extends State<HomePage> {
   //imleç kayıt listesi
   Set<Marker> markersList = {};
 
-  //Arama alanı oluşturan method
-  //Google textfield oluşturur
-  Future<void> _aramaAlani() async {
-    Prediction? p = await PlacesAutocomplete.show(
-      context: context,
-      apiKey: gApiKey,
-      onError: onError,
-      mode: mode,
-      language: "tr",
-      strictbounds: false,
-      types: [""],
-      components: [
-        Component(
-          Component.country,
-          "tr",
-        ),
-      ],
-      decoration: InputDecoration(
-        hintText: "Ara...",
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
-          borderSide: BorderSide(
-            color: Colors.white,
-          ),
-        ),
-      ),
-    );
-    tahminGosterimi(p: p!, scaffoldState: homeScaffold.currentState!);
-  }
-
   Completer<GoogleMapController> _completer = Completer();
   Future<void> _goToPlace(Place place) async {
     final GoogleMapController controller = await _completer.future;
@@ -171,102 +141,108 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     var appBloc = Provider.of<AppBloc>(context);
-    return Scaffold(
-      key: homeScaffold,
-      appBar: AppBar(
-        title: Text('Maps Kullanımı'),
-      ),
-      body: (appBloc.currentLocation == null)
-          ? Center(
-              child: Text("Location Error, Please Try again later"),
-            )
-          : Stack(
-              children: [
-                GoogleMap(
-                  initialCameraPosition: CameraPosition(
-                    target: LatLng(
-                      appBloc.currentLocation!.latitude,
-                      appBloc.currentLocation!.longitude,
+    return SafeArea(
+      child: Scaffold(
+        key: homeScaffold,
+        body: (appBloc.currentLocation == null)
+            ? Center(
+                child: Text("Location Error, Please Try again later"),
+              )
+            : Stack(
+                children: [
+                  GoogleMap(
+                    myLocationEnabled: true,
+                    initialCameraPosition: CameraPosition(
+                      target: LatLng(
+                        appBloc.currentLocation!.latitude,
+                        appBloc.currentLocation!.longitude,
+                      ),
+                      zoom: 14,
                     ),
-                    zoom: 14,
+                    markers: markersList,
+                    mapType: MapType.satellite,
+                    onMapCreated: (GoogleMapController controller) {
+                      _completer.complete(controller);
+                    },
                   ),
-                  markers: markersList,
-                  mapType: MapType.satellite,
-                  onMapCreated: (GoogleMapController controller) {
-                    _completer.complete(controller);
-                  },
-                ),
-                if (appBloc.searchResults != "" &&
-                    appBloc.searchResults.length != 0)
-                  Container(
-                    margin: EdgeInsets.only(top: 70),
-                    child: Stack(
-                      children: [
-                        Container(
-                          height: 400,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.6),
-                          ),
-                        ),
-                        Container(
-                          height: MediaQuery.of(context).size.height,
-                          child: Container(
-                            height: 300,
-                            child: ListView.builder(
-                              itemCount: appBloc.searchResults.length,
-                              itemBuilder: (context, index) {
-                                return ListTile(
-                                  onTap: () {
-                                    appBloc.setSelectedLocation(
-                                        appBloc.searchResults[index].place_id);
-                                  },
-                                  title: Text(
-                                    appBloc.searchResults[index].description,
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                );
-                              },
+                  if (appBloc.searchResults != "" &&
+                      appBloc.searchResults.length != 0)
+                    Container(
+                      margin: EdgeInsets.only(top: 70),
+                      child: Stack(
+                        children: [
+                          Container(
+                           
+                             margin: const EdgeInsets.only(
+                          right: 70,left: 20),
+                            height: 400,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.6),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: Row(
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          _aramaAlani();
-                        },
-                        child: Text("Konum Ara"),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                    ],
-                  ),
-                ),
-                Align(
-                  child: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: TextField(
-                      onChanged: (value) => appBloc.searchPlaces(value),
-                      decoration: InputDecoration(
-                        suffixIcon: Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.brown, width: 1),
-                        ),
-                        hintText: "Konum Arayınız",
+                          Container(
+                            height: MediaQuery.of(context).size.height,
+                            child: Container(
+                              height: 300,
+                              child: ListView.builder(
+                                itemCount: appBloc.searchResults.length,
+                                itemBuilder: (context, index) {
+                                  return Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 20),
+                                    child: ListTile(
+                                      onTap: () {
+                                        appBloc.setSelectedLocation(
+                                            appBloc.searchResults[index].place_id);
+                                      },
+                                      title: Text(
+                                        appBloc.searchResults[index].description,
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                  Align(
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                          top: 10, right: 70,left: 20),
+                      child: TextField(
+                        style: TextStyle(color: Colors.white),
+                        onChanged: (value) => appBloc.searchPlaces(value),
+                        decoration: InputDecoration(
+                          fillColor: Colors.black,
+                          filled: true,
+                          suffixIcon: IconButton(
+                            onPressed: () {},
+                            icon: Icon(
+                              Icons.delete,
+                              color: Colors.white,
+                            ),
+                          ),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: Colors.white,
+                          ),
+                          border: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.brown, width: 1),
+                          ),
+                          hintText: "Konum Arayınız",
+                          hintStyle: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                    alignment: Alignment.topLeft,
                   ),
-                  alignment: Alignment.topLeft,
-                ),
-              ],
-            ),
+                ],
+              ),
+      ),
     );
   }
 }
