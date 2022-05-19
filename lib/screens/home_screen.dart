@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_api_headers/google_api_headers.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_maps_webservice/places.dart';
+import 'package:haritakullanimi/models/place.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_bloc.dart';
 
@@ -89,8 +90,16 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     konumIzniAl();
+    var appBloc = Provider.of<AppBloc>(context, listen: false);
+    locationSubscription = appBloc.selectedLocation.stream.listen((event) {
+      if (event != null) {
+        _goToPlace(event);
+      }
+    });
     super.initState();
   }
+
+  late StreamSubscription locationSubscription;
 
   //Harita Kontrolcüsü
   late GoogleMapController googleMapController;
@@ -141,9 +150,22 @@ class _HomePageState extends State<HomePage> {
     final GoogleMapController controller = await _completer.future;
     controller.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(target: LatLng(35.0, 37.0), zoom: 14),
+        CameraPosition(
+            target: LatLng(
+              place.geometry.location.lat,
+              place.geometry.location.lng,
+            ),
+            zoom: 14),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    var appBloc = Provider.of<AppBloc>(context, listen: false);
+    locationSubscription.cancel();
+    appBloc.dispose();
+    super.dispose();
   }
 
   @override
@@ -171,7 +193,7 @@ class _HomePageState extends State<HomePage> {
                   markers: markersList,
                   mapType: MapType.satellite,
                   onMapCreated: (GoogleMapController controller) {
-                    googleMapController = controller;
+                    _completer.complete(controller);
                   },
                 ),
                 if (appBloc.searchResults != "" &&
@@ -195,6 +217,10 @@ class _HomePageState extends State<HomePage> {
                               itemCount: appBloc.searchResults.length,
                               itemBuilder: (context, index) {
                                 return ListTile(
+                                  onTap: () {
+                                    appBloc.setSelectedLocation(
+                                        appBloc.searchResults[index].place_id);
+                                  },
                                   title: Text(
                                     appBloc.searchResults[index].description,
                                     style: TextStyle(color: Colors.white),
